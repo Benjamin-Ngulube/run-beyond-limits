@@ -10,28 +10,42 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
+import { useToast } from "@/hooks/use-toast";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Check, X } from "lucide-react";
 
 const AdminParticipants = () => {
   const [searchText, setSearchText] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [viewParticipant, setViewParticipant] = useState(null);
+  const [confirmVerifyOpen, setConfirmVerifyOpen] = useState(false);
+  const [confirmRejectOpen, setConfirmRejectOpen] = useState(false);
+  const { toast } = useToast();
 
   // Sample data - this would come from Supabase in a real implementation
-  const participants = [
-    { id: "REG-1001", name: "John Mutale", email: "john.m@example.com", package: "Elite Runner", distance: "42K", payment: "Verified", date: "2025-04-01", tshirt: "L" },
-    { id: "REG-1002", name: "Chipo Banda", email: "chipo.b@example.com", package: "Basic Runner", distance: "21K", payment: "Pending", date: "2025-04-02", tshirt: "M" },
-    { id: "REG-1003", name: "Mulenga Phiri", email: "mulenga@example.com", package: "Premium Package", distance: "42K", payment: "Verified", date: "2025-04-03", tshirt: "XL" },
-    { id: "REG-1004", name: "Thandiwe Zulu", email: "thandiwe@example.com", package: "Basic Runner", distance: "10K", payment: "Failed", date: "2025-04-04", tshirt: "S" },
-    { id: "REG-1005", name: "Bwalya Mwamba", email: "bwalya@example.com", package: "Elite Runner", distance: "42K", payment: "Verified", date: "2025-04-05", tshirt: "M" },
-    { id: "REG-1006", name: "Chilufya Kaoma", email: "chilufya@example.com", package: "Premium Package", distance: "21K", payment: "Pending", date: "2025-04-06", tshirt: "L" },
-    { id: "REG-1007", name: "Lubinda Habeenzu", email: "lubinda@example.com", package: "Basic Runner", distance: "5K", payment: "Verified", date: "2025-04-07", tshirt: "M" },
-    { id: "REG-1008", name: "Natasha Mwansa", email: "natasha@example.com", package: "Elite Runner", distance: "42K", payment: "Pending", date: "2025-04-08", tshirt: "S" },
-  ];
+  const [participants, setParticipants] = useState([
+    { id: "REG-1001", name: "John Mutale", email: "john.m@example.com", package: "Elite Runner", distance: "42K", payment: "Verified", date: "2025-04-01", tshirt: "L", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
+    { id: "REG-1002", name: "Chipo Banda", email: "chipo.b@example.com", package: "Basic Runner", distance: "21K", payment: "Pending", date: "2025-04-02", tshirt: "M", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
+    { id: "REG-1003", name: "Mulenga Phiri", email: "mulenga@example.com", package: "Premium Package", distance: "42K", payment: "Verified", date: "2025-04-03", tshirt: "XL", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
+    { id: "REG-1004", name: "Thandiwe Zulu", email: "thandiwe@example.com", package: "Basic Runner", distance: "10K", payment: "Failed", date: "2025-04-04", tshirt: "S", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
+    { id: "REG-1005", name: "Bwalya Mwamba", email: "bwalya@example.com", package: "Elite Runner", distance: "42K", payment: "Verified", date: "2025-04-05", tshirt: "M", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
+    { id: "REG-1006", name: "Chilufya Kaoma", email: "chilufya@example.com", package: "Premium Package", distance: "21K", payment: "Pending", date: "2025-04-06", tshirt: "L", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
+    { id: "REG-1007", name: "Lubinda Habeenzu", email: "lubinda@example.com", package: "Basic Runner", distance: "5K", payment: "Verified", date: "2025-04-07", tshirt: "M", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
+    { id: "REG-1008", name: "Natasha Mwansa", email: "natasha@example.com", package: "Elite Runner", distance: "42K", payment: "Pending", date: "2025-04-08", tshirt: "S", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
+  ]);
 
   // Filter participants based on search text and filter status
   const filteredParticipants = participants.filter((participant) => {
@@ -46,6 +60,47 @@ const AdminParticipants = () => {
     
     return matchesSearch && matchesStatus;
   });
+
+  const handleVerifyPayment = () => {
+    if (!viewParticipant) return;
+    
+    setParticipants(current => 
+      current.map(p => 
+        p.id === viewParticipant.id 
+          ? {...p, payment: "Verified"} 
+          : p
+      )
+    );
+    
+    setConfirmVerifyOpen(false);
+    setViewParticipant(null);
+    
+    toast({
+      title: "Payment Verified",
+      description: `${viewParticipant.name}'s payment has been verified successfully.`,
+    });
+  };
+
+  const handleRejectPayment = () => {
+    if (!viewParticipant) return;
+    
+    setParticipants(current => 
+      current.map(p => 
+        p.id === viewParticipant.id 
+          ? {...p, payment: "Failed"} 
+          : p
+      )
+    );
+    
+    setConfirmRejectOpen(false);
+    setViewParticipant(null);
+    
+    toast({
+      title: "Payment Rejected",
+      description: `${viewParticipant.name}'s payment has been marked as failed.`,
+      variant: "destructive",
+    });
+  };
 
   return (
     <div className="p-6">
@@ -134,7 +189,12 @@ const AdminParticipants = () => {
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-800">View</button>
+                      <button 
+                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() => setViewParticipant(participant)}
+                      >
+                        View
+                      </button>
                       <button className="text-gray-600 hover:text-gray-800">Edit</button>
                     </div>
                   </TableCell>
@@ -162,6 +222,144 @@ const AdminParticipants = () => {
           </div>
         </div>
       </div>
+
+      {/* Participant Details Dialog */}
+      {viewParticipant && (
+        <Dialog open={true} onOpenChange={() => setViewParticipant(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{viewParticipant.name} - {viewParticipant.id}</DialogTitle>
+              <DialogDescription>
+                Registration details and payment information
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Personal Information</h3>
+                    <div className="grid grid-cols-2 mt-2">
+                      <div className="text-sm">Name:</div>
+                      <div className="text-sm font-medium">{viewParticipant.name}</div>
+                      <div className="text-sm">Email:</div>
+                      <div className="text-sm font-medium">{viewParticipant.email}</div>
+                      <div className="text-sm">T-Shirt Size:</div>
+                      <div className="text-sm font-medium">{viewParticipant.tshirt}</div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">Registration Details</h3>
+                    <div className="grid grid-cols-2 mt-2">
+                      <div className="text-sm">ID:</div>
+                      <div className="text-sm font-medium">{viewParticipant.id}</div>
+                      <div className="text-sm">Date:</div>
+                      <div className="text-sm font-medium">{viewParticipant.date}</div>
+                      <div className="text-sm">Package:</div>
+                      <div className="text-sm font-medium">{viewParticipant.package}</div>
+                      <div className="text-sm">Distance:</div>
+                      <div className="text-sm font-medium">{viewParticipant.distance}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-2">Payment Information</h3>
+                <div className="bg-gray-100 rounded p-2 mb-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Status:</span>
+                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                      viewParticipant.payment === 'Verified' 
+                        ? 'bg-green-100 text-green-800' 
+                        : viewParticipant.payment === 'Pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {viewParticipant.payment}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="border rounded-md overflow-hidden">
+                  <h4 className="bg-gray-50 text-sm font-medium p-2 border-b">Payment Screenshot</h4>
+                  <div className="p-2">
+                    <img 
+                      src={viewParticipant.paymentScreenshot} 
+                      alt="Payment screenshot" 
+                      className="w-full h-auto rounded" 
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter className="flex justify-between items-center">
+              <div className="flex space-x-2">
+                {viewParticipant.payment === "Pending" && (
+                  <>
+                    <Button 
+                      onClick={() => setConfirmRejectOpen(true)} 
+                      variant="outline"
+                      className="bg-white text-red-600 border-red-200 hover:bg-red-50"
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Reject Payment
+                    </Button>
+                    <Button 
+                      onClick={() => setConfirmVerifyOpen(true)}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Check className="mr-2 h-4 w-4" />
+                      Verify Payment
+                    </Button>
+                  </>
+                )}
+              </div>
+              <Button variant="outline" onClick={() => setViewParticipant(null)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Verify Confirmation Dialog */}
+      <Dialog open={confirmVerifyOpen} onOpenChange={setConfirmVerifyOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Verify Payment</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to verify this payment? This will mark the registration as complete.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setConfirmVerifyOpen(false)}>Cancel</Button>
+            <Button onClick={handleVerifyPayment} className="bg-green-600 hover:bg-green-700 text-white">
+              <Check className="mr-2 h-4 w-4" />
+              Verify Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Confirmation Dialog */}
+      <Dialog open={confirmRejectOpen} onOpenChange={setConfirmRejectOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reject Payment</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to reject this payment? The participant will be notified.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setConfirmRejectOpen(false)}>Cancel</Button>
+            <Button onClick={handleRejectPayment} variant="destructive">
+              <X className="mr-2 h-4 w-4" />
+              Reject Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
