@@ -10,6 +10,11 @@ import Results from "./pages/Results";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminParticipants from "./pages/admin/AdminParticipants";
+import AdminStaff from "./pages/admin/AdminStaff";
+import AdminContent from "./pages/admin/AdminContent";
+import AdminResults from "./pages/admin/AdminResults";
+import AdminSettings from "./pages/admin/AdminSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,7 +35,11 @@ const App = () => (
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
-            {/* Add other admin routes here */}
+            <Route path="participants" element={<AdminParticipants />} />
+            <Route path="staff" element={<AdminStaff />} />
+            <Route path="content" element={<AdminContent />} />
+            <Route path="results" element={<AdminResults />} />
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
           
           {/* Catch All */}
