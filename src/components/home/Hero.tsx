@@ -44,7 +44,7 @@ const Hero = () => {
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{ 
-          backgroundImage: "url('https://images.unsplash.com/photo-1517931524326-bdd55a541177?q=80&w=1170&auto=format&fit=crop')", 
+          backgroundImage: "url('src/components/pictures/hero/zambian flag.jpg')", 
           filter: "brightness(0.5)"
         }}
       />

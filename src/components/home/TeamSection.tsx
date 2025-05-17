@@ -2,30 +2,44 @@
 const teamData = [
   {
     id: 1,
-    name: "Sarah Johnson",
-    role: "Event Director",
-    image: "https://placehold.co/300x300/e2e8f0/64748b?text=SJ",
+    name: "Alex Kashimu",
+    role: "Executive Director",
+    image: "src/components/pictures/team/Alex Kashimu.jpeg",
     bio: "Former Olympic marathon runner with 15+ years experience organizing international sporting events."
   },
   {
     id: 2,
-    name: "Michael Rivera",
+    name: "Alex Kashimu",
     role: "Race Coordinator",
-    image: "https://placehold.co/300x300/e2e8f0/64748b?text=MR",
+    image: "src/components/pictures/team/Ackim Kashimu.jpg",
     bio: "Certified sports management professional specializing in marathon course design and logistics."
   },
   {
     id: 3,
     name: "Jessica Chen",
     role: "Participant Experience",
-    image: "https://placehold.co/300x300/e2e8f0/64748b?text=JC",
+    image: "src/components/pictures/team/Chinyimba Katongo.jpg",
     bio: "Passionate about creating memorable experiences for runners of all levels and abilities."
   },
   {
     id: 4,
     name: "David Okoye",
     role: "Medical Director",
-    image: "https://placehold.co/300x300/e2e8f0/64748b?text=DO",
+    image: "src/components/pictures/team/Edwin Kasito.jpg",
+    bio: "Sports medicine physician with extensive experience in marathon medical support."
+  },
+  {
+    id: 4,
+    name: "David Okoye",
+    role: "Medical Director",
+    image: "src/components/pictures/team/iCeMorgan.jpg",
+    bio: "Sports medicine physician with extensive experience in marathon medical support."
+  },
+  {
+    id: 4,
+    name: "David Okoye",
+    role: "Medical Director",
+    image: "src/components/pictures/team/Malaika Chilambwe.jpg",
     bio: "Sports medicine physician with extensive experience in marathon medical support."
   }
 ];

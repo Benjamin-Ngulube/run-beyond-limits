@@ -80,5 +80,18 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^5.4.1"
-  }
+  },
+  "description": "**URL**: https://lovable.dev/projects/d6afd21a-b82e-469b-89f1-cb9cbc33d8ff",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Benjamin-Ngulube/run-beyond-limits.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Benjamin-Ngulube/run-beyond-limits/issues"
+  },
+  "homepage": "https://github.com/Benjamin-Ngulube/run-beyond-limits#readme"
 }

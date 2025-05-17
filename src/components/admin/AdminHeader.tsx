@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -47,6 +46,7 @@ const AdminHeader = ({ toggleMobileMenu }) => {
         <div className="flex items-center space-x-4">
           {isMobile && (
             <button
+              aria-label="Toggle menu"
               onClick={toggleMobileMenu}
               className="text-gray-600 hover:text-gray-800"
             >

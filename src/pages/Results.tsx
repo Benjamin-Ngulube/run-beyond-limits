@@ -1,8 +1,9 @@
-
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { Result } from "@/types/database";
 
 // Sample data - in a real app, this would come from an API
 const eventYears = [2024, 2023, 2022, 2021, 2020];
@@ -14,66 +15,45 @@ const eventCategories = [
   { id: "5k", name: "5K Fun Run" }
 ];
 
-const sampleResults = [
-  {
-    id: 1,
-    year: 2024,
-    category: "full",
-    participants: [
-      { position: 1, name: "John Smith", bibNumber: "A123", finishTime: "2:43:27", country: "United States" },
-      { position: 2, name: "Michael Chen", bibNumber: "A245", finishTime: "2:45:11", country: "Canada" },
-      { position: 3, name: "David Kimani", bibNumber: "A108", finishTime: "2:46:05", country: "Kenya" },
-      { position: 4, name: "Sarah Johnson", bibNumber: "A187", finishTime: "2:47:38", country: "United Kingdom" },
-      { position: 5, name: "Emma Williams", bibNumber: "A294", finishTime: "2:49:12", country: "Australia" },
-    ]
-  },
-  {
-    id: 2,
-    year: 2024,
-    category: "half",
-    participants: [
-      { position: 1, name: "Lisa Rodriguez", bibNumber: "B112", finishTime: "1:12:35", country: "Spain" },
-      { position: 2, name: "Robert Kim", bibNumber: "B156", finishTime: "1:13:22", country: "South Korea" },
-      { position: 3, name: "Jennifer Wong", bibNumber: "B089", finishTime: "1:14:47", country: "Hong Kong" },
-      { position: 4, name: "Carlos Mendez", bibNumber: "B204", finishTime: "1:15:33", country: "Mexico" },
-      { position: 5, name: "Maria Silva", bibNumber: "B132", finishTime: "1:16:05", country: "Brazil" },
-    ]
-  },
-  {
-    id: 3,
-    year: 2023,
-    category: "full",
-    participants: [
-      { position: 1, name: "Daniel Clark", bibNumber: "A098", finishTime: "2:45:19", country: "United States" },
-      { position: 2, name: "Simon Peters", bibNumber: "A182", finishTime: "2:46:52", country: "United Kingdom" },
-      { position: 3, name: "Lucy Chen", bibNumber: "A175", finishTime: "2:48:11", country: "China" },
-      { position: 4, name: "Alex Johnson", bibNumber: "A221", finishTime: "2:49:07", country: "Canada" },
-      { position: 5, name: "Mohammed Al-Fayed", bibNumber: "A143", finishTime: "2:50:36", country: "Egypt" },
-    ]
-  }
-];
-
 const Results = () => {
   const [selectedYear, setSelectedYear] = useState(eventYears[0]);
   const [selectedCategory, setSelectedCategory] = useState(eventCategories[0].id);
   const [searchTerm, setSearchTerm] = useState("");
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<Result[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Filter results based on selected year and category
-    const filteredResults = sampleResults.find(
-      result => result.year === selectedYear && result.category === selectedCategory
-    );
-    
-    setResults(filteredResults?.participants || []);
-  }, [selectedYear, selectedCategory]);
+    async function fetchResults() {
+      try {
+        const { data, error } = await supabase
+          .from('results')
+          .select(`
+            *,
+            registration:registrations(
+              user:users(full_name, country)
+            )
+          `)
+          .order('position', { ascending: true });
 
+        if (error) throw error;
+        setResults(data || []);
+      } catch (error) {
+        console.error('Error fetching results:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchResults();
+  }, []);
+
+  // Filter results based on selected year and category
   const filteredResults = results.filter(
     result => 
-      result.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      result.bibNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      result.country.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      result.registration?.user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      result.bib_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      result.registration?.user.country.toLowerCase().includes(searchTerm.toLowerCase())
+  ).filter(result => result.year === selectedYear && result.category === selectedCategory);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -160,7 +140,11 @@ const Results = () => {
                 </h2>
               </div>
               
-              {filteredResults.length > 0 ? (
+              {loading ? (
+                <div className="py-12 text-center text-gray-500">
+                  <p className="text-lg font-medium">Loading results...</p>
+                </div>
+              ) : filteredResults.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
                     <thead>
@@ -184,21 +168,21 @@ const Results = () => {
                     </thead>
                     <tbody>
                       {filteredResults.map((result, index) => (
-                        <tr key={result.bibNumber} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                        <tr key={result.bib_number} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {result.position}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {result.bibNumber}
+                            {result.bib_number}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                            {result.name}
+                            {result.registration?.user.full_name}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {result.country}
+                            {result.registration?.user.country}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
-                            {result.finishTime}
+                            {result.finish_time}
                           </td>
                         </tr>
                       ))}

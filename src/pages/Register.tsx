@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const packages = [
   {
@@ -85,25 +86,63 @@ const Register = () => {
     window.scrollTo(0, 0);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // In a real implementation, you would send the data to the backend
-    console.log("Form submitted:", formData);
+    try {
+      // First create the user record
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .insert({
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          country: formData.country,
+          tshirt_size: formData.tshirtSize
+        })
+        .select()
+        .single();
 
-    // Simulate API call delay
-    setTimeout(() => {
-      // Generate a random 4-digit ID
-      const generatedId = Math.floor(1000 + Math.random() * 9000).toString();
-      setRegistrationId(generatedId);
-      setIsSubmitting(false);
-      setStep(4); // Move to confirmation step
-      
+      if (userError) throw userError;
+
+      // Then create the registration record
+      const { error: regError } = await supabase
+        .from('registrations')
+        .insert({
+          user_id: userData.id,
+          package_id: parseInt(formData.packageId),
+          distance: formData.distance,
+          status: 'pending',
+          payment_proof: null // Will be updated when file is uploaded
+        });
+
+      if (regError) throw regError;
+
+      // Handle file upload if payment proof exists
+      if (formData.paymentProof) {
+        const fileExt = formData.paymentProof.name.split('.').pop();
+        const fileName = `${userData.id}-${Math.random()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('payment-proofs')
+          .upload(fileName, formData.paymentProof);
+
+        if (uploadError) throw uploadError;
+      }
+
       toast.success("Registration successful!", {
-        description: `Your registration ID is ${generatedId}`,
+        description: "We'll review your registration and get back to you soon.",
       });
-    }, 1500);
+      
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast.error("Registration failed", {
+        description: "Please try again or contact support if the problem persists.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const selectedPackage = packages.find(p => p.id.toString() === formData.packageId.toString());
