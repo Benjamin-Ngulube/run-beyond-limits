@@ -4,50 +4,31 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
+  // Sample data
   const stats = [
     {
       title: "Total Registrations",
       value: 2648,
       change: "+12%",
-      isPositive: true,
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-      ),
+      isPositive: true
     },
     {
       title: "Completed Payments",
       value: 2134,
       change: "+8%",
-      isPositive: true,
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-      ),
+      isPositive: true
     },
     {
       title: "Pending Approvals",
       value: 514,
       change: "-2%",
-      isPositive: false,
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
+      isPositive: false
     },
     {
       title: "Staff Members",
       value: 42,
       change: "+3",
-      isPositive: true,
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-        </svg>
-      ),
+      isPositive: true
     },
   ];
 
@@ -61,12 +42,12 @@ const Dashboard = () => {
 
   return (
     <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Dashboard</h1>
+      <header className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Admin Dashboard</h1>
         <p className="text-gray-600">
-          Welcome back! Here's what's happening with your marathon event.
+          Welcome back! Monitor and manage your marathon event.
         </p>
-      </div>
+      </header>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -75,13 +56,8 @@ const Dashboard = () => {
             key={index}
             className="bg-white rounded-lg shadow-sm p-6 border border-gray-100"
           >
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-2 rounded-lg bg-marathon-blue bg-opacity-10 text-marathon-blue">
-                {stat.icon}
-              </div>
-              <div className={`text-sm font-medium ${stat.isPositive ? "text-green-500" : "text-red-500"}`}>
-                {stat.change}
-              </div>
+            <div className={`text-sm font-medium mb-2 ${stat.isPositive ? "text-green-500" : "text-red-500"}`}>
+              {stat.change}
             </div>
             <h3 className="text-gray-500 text-sm mb-1">{stat.title}</h3>
             <div className="text-2xl font-bold text-gray-800">{stat.value}</div>
@@ -136,9 +112,9 @@ const Dashboard = () => {
               priority="low"
             />
           </div>
-          <button className="mt-4 w-full py-2 text-sm text-marathon-blue font-medium border border-marathon-blue rounded-md hover:bg-marathon-blue hover:text-white transition-colors">
+          <Button className="mt-4 w-full border border-marathon-blue text-marathon-blue bg-white hover:bg-marathon-blue hover:text-white transition-colors">
             View All Tasks
-          </button>
+          </Button>
         </div>
       </div>
 
