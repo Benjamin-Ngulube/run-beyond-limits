@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -476,7 +475,7 @@ const Register = () => {
                         </div>
                         <div>
                           <div className="text-sm text-gray-500">Reference</div>
-                          <div className="font-medium">M2025-{formData.lastName || "YOUR-NAME"}</div>
+                          <div className="font-medium">M2025-{formData.fullName || "YOUR-NAME"}</div>
                         </div>
                       </div>
                     </div>

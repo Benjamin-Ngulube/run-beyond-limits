@@ -3,9 +3,17 @@ import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-const calculateTimeLeft = () => {
+// Define a type for the time left object
+interface TimeLeft {
+  days?: number;
+  hours?: number;
+  minutes?: number;
+  seconds?: number;
+}
+
+const calculateTimeLeft = (): TimeLeft => {
   const difference = +new Date("2025-06-21") - +new Date();
-  let timeLeft = {};
+  let timeLeft: TimeLeft = {};
 
   if (difference > 0) {
     timeLeft = {
@@ -20,7 +28,7 @@ const calculateTimeLeft = () => {
 };
 
 const Hero = () => {
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>(calculateTimeLeft());
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -88,7 +96,12 @@ const Hero = () => {
   );
 };
 
-const CountdownItem = ({ value, label }) => (
+interface CountdownItemProps {
+  value?: number;
+  label: string;
+}
+
+const CountdownItem = ({ value, label }: CountdownItemProps) => (
   <div className="bg-white/10 backdrop-blur-md rounded-lg p-4 animate-countdown">
     <div className="text-4xl md:text-5xl font-bold text-white">
       {value || '00'}
