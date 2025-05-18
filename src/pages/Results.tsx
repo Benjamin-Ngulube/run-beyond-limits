@@ -1,11 +1,12 @@
+
 import { useEffect, useState } from "react";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Result } from "@/types/database";
+import { toast } from "@/hooks/use-toast";
 
-// Sample data - in a real app, this would come from an API
 const eventYears = [2024, 2023, 2022, 2021, 2020];
 
 const eventCategories = [
@@ -25,35 +26,54 @@ const Results = () => {
   useEffect(() => {
     async function fetchResults() {
       try {
+        setLoading(true);
         const { data, error } = await supabase
           .from('results')
           .select(`
             *,
-            registration:registrations(
-              user:users(full_name, country)
+            registration:registration_id (
+              user:user_id (
+                full_name,
+                country
+              )
             )
           `)
+          .eq('year', selectedYear)
+          .eq('category', selectedCategory)
           .order('position', { ascending: true });
 
         if (error) throw error;
         setResults(data || []);
       } catch (error) {
         console.error('Error fetching results:', error);
+        toast({
+          title: "Error fetching results",
+          description: "Please try again later",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
     }
 
     fetchResults();
-  }, []);
+  }, [selectedYear, selectedCategory]);
 
-  // Filter results based on selected year and category
+  // Filter results based on search term
   const filteredResults = results.filter(
     result => 
       result.registration?.user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       result.bib_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       result.registration?.user.country.toLowerCase().includes(searchTerm.toLowerCase())
-  ).filter(result => result.year === selectedYear && result.category === selectedCategory);
+  );
+
+  const handleDownloadCSV = () => {
+    // Placeholder for CSV export functionality
+    toast({
+      title: "Feature coming soon",
+      description: "CSV export will be available soon!"
+    });
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -126,7 +146,10 @@ const Results = () => {
               </div>
 
               <div className="flex justify-end">
-                <Button className="bg-marathon-blue hover:bg-marathon-darkBlue text-white">
+                <Button 
+                  className="bg-marathon-blue hover:bg-marathon-darkBlue text-white"
+                  onClick={handleDownloadCSV}
+                >
                   Download Results (CSV)
                 </Button>
               </div>
@@ -168,7 +191,7 @@ const Results = () => {
                     </thead>
                     <tbody>
                       {filteredResults.map((result, index) => (
-                        <tr key={result.bib_number} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                        <tr key={result.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {result.position}
                           </td>
@@ -176,10 +199,10 @@ const Results = () => {
                             {result.bib_number}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                            {result.registration?.user.full_name}
+                            {result.registration?.user.full_name || "Unknown"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {result.registration?.user.country}
+                            {result.registration?.user.country || "Unknown"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
                             {result.finish_time}

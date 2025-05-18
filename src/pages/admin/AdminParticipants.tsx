@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Table, 
   TableBody, 
@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Check, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminParticipants = () => {
   const [searchText, setSearchText] = useState("");
@@ -33,19 +34,65 @@ const AdminParticipants = () => {
   const [viewParticipant, setViewParticipant] = useState(null);
   const [confirmVerifyOpen, setConfirmVerifyOpen] = useState(false);
   const [confirmRejectOpen, setConfirmRejectOpen] = useState(false);
+  const [participants, setParticipants] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
-  // Sample data - this would come from Supabase in a real implementation
-  const [participants, setParticipants] = useState([
-    { id: "REG-1001", name: "John Mutale", email: "john.m@example.com", package: "Elite Runner", distance: "42K", payment: "Verified", date: "2025-04-01", tshirt: "L", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
-    { id: "REG-1002", name: "Chipo Banda", email: "chipo.b@example.com", package: "Basic Runner", distance: "21K", payment: "Pending", date: "2025-04-02", tshirt: "M", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
-    { id: "REG-1003", name: "Mulenga Phiri", email: "mulenga@example.com", package: "Premium Package", distance: "42K", payment: "Verified", date: "2025-04-03", tshirt: "XL", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
-    { id: "REG-1004", name: "Thandiwe Zulu", email: "thandiwe@example.com", package: "Basic Runner", distance: "10K", payment: "Failed", date: "2025-04-04", tshirt: "S", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
-    { id: "REG-1005", name: "Bwalya Mwamba", email: "bwalya@example.com", package: "Elite Runner", distance: "42K", payment: "Verified", date: "2025-04-05", tshirt: "M", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
-    { id: "REG-1006", name: "Chilufya Kaoma", email: "chilufya@example.com", package: "Premium Package", distance: "21K", payment: "Pending", date: "2025-04-06", tshirt: "L", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
-    { id: "REG-1007", name: "Lubinda Habeenzu", email: "lubinda@example.com", package: "Basic Runner", distance: "5K", payment: "Verified", date: "2025-04-07", tshirt: "M", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
-    { id: "REG-1008", name: "Natasha Mwansa", email: "natasha@example.com", package: "Elite Runner", distance: "42K", payment: "Pending", date: "2025-04-08", tshirt: "S", paymentScreenshot: "https://via.placeholder.com/500x300?text=Payment+Screenshot" },
-  ]);
+  
+  // Fetch participants from Supabase
+  useEffect(() => {
+    async function fetchParticipants() {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('registrations')
+          .select(`
+            id,
+            created_at,
+            status,
+            amount,
+            distance,
+            payment_proof,
+            package:packages(name),
+            user:users(id, full_name, email, phone, country, tshirt_size)
+          `)
+          .order('created_at', { ascending: false });
+          
+        if (error) throw error;
+        
+        if (data) {
+          // Format data for our UI
+          const formattedData = data.map(registration => ({
+            id: registration.id,
+            name: registration.user?.full_name || 'Unknown',
+            email: registration.user?.email || 'Unknown',
+            package: registration.package?.name || 'Unknown',
+            distance: registration.distance,
+            payment: registration.status,
+            date: new Date(registration.created_at).toISOString().split('T')[0],
+            tshirt: registration.user?.tshirt_size || 'Unknown',
+            paymentScreenshot: registration.payment_proof,
+            phone: registration.user?.phone || 'Unknown',
+            country: registration.user?.country || 'Unknown',
+            userId: registration.user?.id,
+            amount: registration.amount
+          }));
+          
+          setParticipants(formattedData);
+        }
+      } catch (error) {
+        console.error('Error fetching participants:', error);
+        toast({
+          title: "Failed to load participants",
+          description: "Please try refreshing the page",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchParticipants();
+  }, [toast]);
 
   // Filter participants based on search text and filter status
   const filteredParticipants = participants.filter((participant) => {
@@ -61,45 +108,81 @@ const AdminParticipants = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleVerifyPayment = () => {
+  const handleVerifyPayment = async () => {
     if (!viewParticipant) return;
     
-    setParticipants(current => 
-      current.map(p => 
-        p.id === viewParticipant.id 
-          ? {...p, payment: "Verified"} 
-          : p
-      )
-    );
-    
-    setConfirmVerifyOpen(false);
-    setViewParticipant(null);
-    
-    toast({
-      title: "Payment Verified",
-      description: `${viewParticipant.name}'s payment has been verified successfully.`,
-    });
+    try {
+      // Update status in Supabase
+      const { error } = await supabase
+        .from('registrations')
+        .update({ status: 'verified' })
+        .eq('id', viewParticipant.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setParticipants(current => 
+        current.map(p => 
+          p.id === viewParticipant.id 
+            ? {...p, payment: "verified"} 
+            : p
+        )
+      );
+      
+      setConfirmVerifyOpen(false);
+      setViewParticipant(null);
+      
+      toast({
+        title: "Payment Verified",
+        description: `${viewParticipant.name}'s payment has been verified successfully.`,
+      });
+    } catch (error) {
+      console.error('Error verifying payment:', error);
+      toast({
+        title: "Failed to verify payment",
+        description: "An error occurred while verifying the payment.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleRejectPayment = () => {
+  const handleRejectPayment = async () => {
     if (!viewParticipant) return;
     
-    setParticipants(current => 
-      current.map(p => 
-        p.id === viewParticipant.id 
-          ? {...p, payment: "Failed"} 
-          : p
-      )
-    );
-    
-    setConfirmRejectOpen(false);
-    setViewParticipant(null);
-    
-    toast({
-      title: "Payment Rejected",
-      description: `${viewParticipant.name}'s payment has been marked as failed.`,
-      variant: "destructive",
-    });
+    try {
+      // Update status in Supabase
+      const { error } = await supabase
+        .from('registrations')
+        .update({ status: 'rejected' })
+        .eq('id', viewParticipant.id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setParticipants(current => 
+        current.map(p => 
+          p.id === viewParticipant.id 
+            ? {...p, payment: "rejected"} 
+            : p
+        )
+      );
+      
+      setConfirmRejectOpen(false);
+      setViewParticipant(null);
+      
+      toast({
+        title: "Payment Rejected",
+        description: `${viewParticipant.name}'s payment has been marked as rejected.`,
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error('Error rejecting payment:', error);
+      toast({
+        title: "Failed to reject payment",
+        description: "An error occurred while rejecting the payment.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -141,7 +224,7 @@ const AdminParticipants = () => {
                 <DropdownMenuItem onClick={() => setFilterStatus('all')}>All</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setFilterStatus('verified')}>Verified</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setFilterStatus('pending')}>Pending</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setFilterStatus('failed')}>Failed</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterStatus('rejected')}>Rejected</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -167,47 +250,61 @@ const AdminParticipants = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredParticipants.map((participant) => (
-                <TableRow key={participant.id}>
-                  <TableCell className="font-medium">{participant.id}</TableCell>
-                  <TableCell>{participant.name}</TableCell>
-                  <TableCell>{participant.email}</TableCell>
-                  <TableCell>{participant.package}</TableCell>
-                  <TableCell>{participant.distance}</TableCell>
-                  <TableCell>{participant.tshirt}</TableCell>
-                  <TableCell>{participant.date}</TableCell>
-                  <TableCell>
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                      participant.payment === 'Verified' 
-                        ? 'bg-green-100 text-green-800' 
-                        : participant.payment === 'Pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {participant.payment}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <button 
-                        className="text-blue-600 hover:text-blue-800"
-                        onClick={() => setViewParticipant(participant)}
-                      >
-                        View
-                      </button>
-                      <button className="text-gray-600 hover:text-gray-800">Edit</button>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center py-8">
+                    <div className="flex justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Loading participants...
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : filteredParticipants.length > 0 ? (
+                filteredParticipants.map((participant) => (
+                  <TableRow key={participant.id}>
+                    <TableCell className="font-medium">{participant.id.substring(0, 8)}</TableCell>
+                    <TableCell>{participant.name}</TableCell>
+                    <TableCell>{participant.email}</TableCell>
+                    <TableCell>{participant.package}</TableCell>
+                    <TableCell>{participant.distance}</TableCell>
+                    <TableCell>{participant.tshirt}</TableCell>
+                    <TableCell>{participant.date}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                        participant.payment === 'verified' 
+                          ? 'bg-green-100 text-green-800' 
+                          : participant.payment === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {participant.payment}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <button 
+                          className="text-blue-600 hover:text-blue-800"
+                          onClick={() => setViewParticipant(participant)}
+                        >
+                          View
+                        </button>
+                        <button className="text-gray-600 hover:text-gray-800">Edit</button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={9} className="py-8 text-center text-gray-500">
+                    No participants found matching your search criteria.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
-          
-          {filteredParticipants.length === 0 && (
-            <div className="py-8 text-center text-gray-500">
-              No participants found matching your search criteria.
-            </div>
-          )}
         </div>
 
         {/* Pagination */}
@@ -228,7 +325,7 @@ const AdminParticipants = () => {
         <Dialog open={true} onOpenChange={() => setViewParticipant(null)}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>{viewParticipant.name} - {viewParticipant.id}</DialogTitle>
+              <DialogTitle>{viewParticipant.name} - {viewParticipant.id.substring(0, 8)}</DialogTitle>
               <DialogDescription>
                 Registration details and payment information
               </DialogDescription>
@@ -244,6 +341,10 @@ const AdminParticipants = () => {
                       <div className="text-sm font-medium">{viewParticipant.name}</div>
                       <div className="text-sm">Email:</div>
                       <div className="text-sm font-medium">{viewParticipant.email}</div>
+                      <div className="text-sm">Phone:</div>
+                      <div className="text-sm font-medium">{viewParticipant.phone}</div>
+                      <div className="text-sm">Country:</div>
+                      <div className="text-sm font-medium">{viewParticipant.country}</div>
                       <div className="text-sm">T-Shirt Size:</div>
                       <div className="text-sm font-medium">{viewParticipant.tshirt}</div>
                     </div>
@@ -253,13 +354,15 @@ const AdminParticipants = () => {
                     <h3 className="text-sm font-medium text-gray-500">Registration Details</h3>
                     <div className="grid grid-cols-2 mt-2">
                       <div className="text-sm">ID:</div>
-                      <div className="text-sm font-medium">{viewParticipant.id}</div>
+                      <div className="text-sm font-medium">{viewParticipant.id.substring(0, 8)}</div>
                       <div className="text-sm">Date:</div>
                       <div className="text-sm font-medium">{viewParticipant.date}</div>
                       <div className="text-sm">Package:</div>
                       <div className="text-sm font-medium">{viewParticipant.package}</div>
                       <div className="text-sm">Distance:</div>
                       <div className="text-sm font-medium">{viewParticipant.distance}</div>
+                      <div className="text-sm">Amount:</div>
+                      <div className="text-sm font-medium">${viewParticipant.amount}</div>
                     </div>
                   </div>
                 </div>
@@ -271,9 +374,9 @@ const AdminParticipants = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Status:</span>
                     <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                      viewParticipant.payment === 'Verified' 
+                      viewParticipant.payment === 'verified' 
                         ? 'bg-green-100 text-green-800' 
-                        : viewParticipant.payment === 'Pending'
+                        : viewParticipant.payment === 'pending'
                         ? 'bg-yellow-100 text-yellow-800'
                         : 'bg-red-100 text-red-800'
                     }`}>
@@ -285,11 +388,17 @@ const AdminParticipants = () => {
                 <div className="border rounded-md overflow-hidden">
                   <h4 className="bg-gray-50 text-sm font-medium p-2 border-b">Payment Screenshot</h4>
                   <div className="p-2">
-                    <img 
-                      src={viewParticipant.paymentScreenshot} 
-                      alt="Payment screenshot" 
-                      className="w-full h-auto rounded" 
-                    />
+                    {viewParticipant.paymentScreenshot ? (
+                      <img 
+                        src={viewParticipant.paymentScreenshot} 
+                        alt="Payment screenshot" 
+                        className="w-full h-auto rounded" 
+                      />
+                    ) : (
+                      <div className="bg-gray-100 h-40 flex items-center justify-center text-gray-400 rounded">
+                        No payment screenshot provided
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -297,7 +406,7 @@ const AdminParticipants = () => {
             
             <DialogFooter className="flex justify-between items-center">
               <div className="flex space-x-2">
-                {viewParticipant.payment === "Pending" && (
+                {viewParticipant.payment === "pending" && (
                   <>
                     <Button 
                       onClick={() => setConfirmRejectOpen(true)} 

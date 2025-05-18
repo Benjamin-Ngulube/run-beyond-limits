@@ -1,41 +1,17 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-const packages = [
-  {
-    id: 1,
-    name: "Basic Runner",
-    price: 49
-  },
-  {
-    id: 2,
-    name: "Premium Runner",
-    price: 89
-  },
-  {
-    id: 3,
-    name: "Elite Experience",
-    price: 149
-  }
-];
-
-const distances = [
-  { id: "5k", name: "5K Fun Run", additionalPrice: 0 },
-  { id: "10k", name: "10K Race", additionalPrice: 10 },
-  { id: "half", name: "Half Marathon", additionalPrice: 25 },
-  { id: "full", name: "Full Marathon", additionalPrice: 40 }
-];
-
-const tShirtSizes = ["XS", "S", "M", "L", "XL", "XXL"];
+import { v4 as uuidv4 } from 'uuid';
 
 const Register = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
+  const [packages, setPackages] = useState([]);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -52,6 +28,35 @@ const Register = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationId, setRegistrationId] = useState(null);
+
+  const distances = [
+    { id: "5k", name: "5K Fun Run", additionalPrice: 0 },
+    { id: "10k", name: "10K Race", additionalPrice: 10 },
+    { id: "half", name: "Half Marathon", additionalPrice: 25 },
+    { id: "full", name: "Full Marathon", additionalPrice: 40 }
+  ];
+
+  const tShirtSizes = ["XS", "S", "M", "L", "XL", "XXL"];
+  
+  // Fetch packages from Supabase
+  useEffect(() => {
+    async function fetchPackages() {
+      try {
+        const { data, error } = await supabase
+          .from('packages')
+          .select('*')
+          .order('id', { ascending: true });
+          
+        if (error) throw error;
+        if (data) setPackages(data);
+      } catch (error) {
+        console.error('Error fetching packages:', error);
+        toast.error('Failed to load packages. Please try again.');
+      }
+    }
+    
+    fetchPackages();
+  }, []);
 
   useEffect(() => {
     // Set package and distance from URL params if they exist
@@ -86,10 +91,11 @@ const Register = () => {
     window.scrollTo(0, 0);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
+    const generatedId = uuidv4();
+    
     try {
       // First create the user record
       const { data: userData, error: userError } = await supabase
@@ -106,30 +112,53 @@ const Register = () => {
 
       if (userError) throw userError;
 
+      // Upload payment proof if it exists
+      let paymentProofUrl = '';
+      
+      if (formData.paymentProof) {
+        const fileExt = formData.paymentProof.name.split('.').pop();
+        const fileName = `${userData.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        
+        const { data: fileData, error: uploadError } = await supabase.storage
+          .from('payment_proofs')
+          .upload(fileName, formData.paymentProof);
+
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('payment_proofs')
+          .getPublicUrl(fileName);
+          
+        paymentProofUrl = publicUrl;
+      }
+
+      // Calculate amount based on selected package and distance
+      const selectedPackage = packages.find(p => p.id.toString() === formData.packageId.toString());
+      const selectedDistance = distances.find(d => d.id === formData.distance);
+      const totalAmount = selectedPackage ? selectedPackage.price + (selectedDistance?.additionalPrice || 0) : 0;
+
       // Then create the registration record
-      const { error: regError } = await supabase
+      const { data: regData, error: regError } = await supabase
         .from('registrations')
         .insert({
           user_id: userData.id,
           package_id: parseInt(formData.packageId),
           distance: formData.distance,
           status: 'pending',
-          payment_proof: null // Will be updated when file is uploaded
-        });
+          payment_proof: paymentProofUrl,
+          amount: totalAmount,
+          email: formData.email
+        })
+        .select()
+        .single();
 
       if (regError) throw regError;
-
-      // Handle file upload if payment proof exists
-      if (formData.paymentProof) {
-        const fileExt = formData.paymentProof.name.split('.').pop();
-        const fileName = `${userData.id}-${Math.random()}.${fileExt}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('payment-proofs')
-          .upload(fileName, formData.paymentProof);
-
-        if (uploadError) throw uploadError;
-      }
+      
+      // Store the registration ID for the confirmation page
+      setRegistrationId(regData.id);
+      
+      // Move to the confirmation step
+      setStep(4);
 
       toast.success("Registration successful!", {
         description: "We'll review your registration and get back to you soon.",
@@ -533,6 +562,7 @@ const Register = () => {
                         onChange={handleFileChange}
                         required
                         className="sr-only"
+                        accept="image/*"
                       />
                       <label htmlFor="paymentProof" className="cursor-pointer">
                         <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
@@ -586,7 +616,7 @@ const Register = () => {
                   
                   <div className="bg-gray-50 rounded-lg p-6 mb-6 inline-block">
                     <p className="text-gray-600 mb-2">Your Registration ID:</p>
-                    <p className="text-3xl font-bold text-marathon-blue">{registrationId}</p>
+                    <p className="text-3xl font-bold text-marathon-blue">{registrationId?.substring(0, 8) || "Registration Complete"}</p>
                   </div>
                   
                   <p className="text-gray-600 mb-8">
