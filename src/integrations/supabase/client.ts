@@ -9,7 +9,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey);
 // Function to call Supabase Edge Functions
 export async function callEdgeFunction(functionName: string, options: {
   method?: string;
-  body?: any;
+  body?: Record<string, unknown>;
 } = {}) {
   try {
     const { method = 'POST', body } = options;
@@ -49,7 +49,7 @@ export const sendEmail = {
   },
   
   // Send welcome email when user registers
-  welcome: async (name: string, email: string, customData: Record<string, any> = {}) => {
+  welcome: async (name: string, email: string, customData: Record<string, string | number | boolean> = {}) => {
     return callEdgeFunction('send-participant-email', {
       body: {
         name,
@@ -61,7 +61,7 @@ export const sendEmail = {
   },
   
   // Send reminder email before event
-  reminder: async (name: string, email: string, customData: Record<string, any> = {}) => {
+  reminder: async (name: string, email: string, customData: Record<string, string | number | boolean> = {}) => {
     return callEdgeFunction('send-participant-email', {
       body: {
         name,
