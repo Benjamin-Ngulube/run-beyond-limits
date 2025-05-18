@@ -120,6 +120,9 @@ const AdminParticipants = () => {
         
       if (error) throw error;
       
+      // Send verification email
+      await sendVerificationEmail(viewParticipant.email, viewParticipant.name);
+      
       // Update local state
       setParticipants(current => 
         current.map(p => 
@@ -134,7 +137,7 @@ const AdminParticipants = () => {
       
       toast({
         title: "Payment Verified",
-        description: `${viewParticipant.name}'s payment has been verified successfully.`,
+        description: `${viewParticipant.name}'s payment has been verified successfully and email notification sent.`,
       });
     } catch (error) {
       console.error('Error verifying payment:', error);
@@ -143,6 +146,27 @@ const AdminParticipants = () => {
         description: "An error occurred while verifying the payment.",
         variant: "destructive"
       });
+    }
+  };
+
+  const sendVerificationEmail = async (email, name) => {
+    try {
+      const response = await fetch('/api/send-verification-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, name }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to send verification email');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error sending verification email:', error);
+      throw error;
     }
   };
 
@@ -438,7 +462,7 @@ const AdminParticipants = () => {
           <DialogHeader>
             <DialogTitle>Verify Payment</DialogTitle>
             <DialogDescription>
-              Are you sure you want to verify this payment? This will mark the registration as complete.
+              Are you sure you want to verify this payment? This will mark the registration as complete and send an email notification.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex justify-end space-x-2">
