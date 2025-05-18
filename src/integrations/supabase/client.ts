@@ -34,3 +34,41 @@ export async function callEdgeFunction(functionName: string, options: {
     throw error;
   }
 }
+
+// Email helper functions
+export const sendEmail = {
+  // Send verification email when admin verifies registration
+  verification: async (name: string, email: string) => {
+    return callEdgeFunction('send-participant-email', {
+      body: {
+        name,
+        email,
+        emailType: 'verification'
+      }
+    });
+  },
+  
+  // Send welcome email when user registers
+  welcome: async (name: string, email: string, customData: Record<string, any> = {}) => {
+    return callEdgeFunction('send-participant-email', {
+      body: {
+        name,
+        email,
+        emailType: 'welcome',
+        customData
+      }
+    });
+  },
+  
+  // Send reminder email before event
+  reminder: async (name: string, email: string, customData: Record<string, any> = {}) => {
+    return callEdgeFunction('send-participant-email', {
+      body: {
+        name,
+        email,
+        emailType: 'reminder',
+        customData
+      }
+    });
+  }
+};

@@ -17,6 +17,99 @@ const Packages = () => {
     { id: "full", name: "Full Marathon", additionalPrice: 40 }
   ];
 
+  // Static packages data for Color Splash Run
+  const colorSplashPackages = [
+    {
+      id: 1,
+      name: "Family Package",
+      price: 1000,
+      forPeople: 4,
+      features: [
+        "Entry tickets for 4 participants",
+        "4 color powder packs",
+        "4 event T-shirts",
+        "4 finisher sunglasses",
+        "Access to post-run refreshments"
+      ],
+      recommended: false,
+      note: "Perfect for families looking for a fun, active day out!"
+    },
+    {
+      id: 2,
+      name: "Corporate Package",
+      price: 300,
+      forPeople: 1,
+      features: [
+        "Entry ticket per participant",
+        "1 color powder pack",
+        "1 event T-shirt",
+        "Sunglasses",
+        "Team-building opportunities",
+        "Customizable group branding (for teams of 10+)"
+      ],
+      recommended: true,
+      note: "Discounts available for groups of 20+ (contact organizers)"
+    },
+    {
+      id: 3,
+      name: "Student Package",
+      price: 250,
+      forPeople: 1,
+      features: [
+        "Entry ticket",
+        "1 color powder pack",
+        "1 event T-shirt",
+        "Sunglasses",
+        "Access to student-only refreshment zones"
+      ],
+      recommended: false,
+      note: "Valid student ID must be presented at registration"
+    },
+    {
+      id: 4,
+      name: "Learning Institution Package",
+      price: 300,
+      forPeople: 1,
+      features: [
+        "Entry ticket per participant",
+        "1 color powder pack",
+        "1 event T-shirt",
+        "Sunglasses",
+        "Certificate of participation for schools/universities"
+      ],
+      recommended: false,
+      note: "Ideal for field trips, sports clubs, or university teams"
+    },
+    {
+      id: 5,
+      name: "Individual Package",
+      price: 300,
+      forPeople: 1,
+      features: [
+        "Entry ticket",
+        "1 color powder pack",
+        "1 event T-shirt",
+        "Sunglasses"
+      ],
+      recommended: false
+    },
+    {
+      id: 6,
+      name: "Early Bird Special",
+      price: 1000,
+      forPeople: 4,
+      features: [
+        "Entry tickets for 4 participants",
+        "4 color powder packs",
+        "4 event T-shirts",
+        "4 Sunglasses",
+        "Early Bird Special"
+      ],
+      recommended: false,
+      note: "Limited Time Offer: Register before 23rd May 2025 to secure this deal!"
+    }
+  ];
+
   // Fetch packages from Supabase
   useEffect(() => {
     async function fetchPackages() {
@@ -46,8 +139,8 @@ const Packages = () => {
           description: "Please try refreshing the page",
           variant: "destructive"
         });
-        // Fallback to empty array
-        setPackages([]);
+        // Fallback to static packages if database fails
+        setPackages(colorSplashPackages);
       } finally {
         setLoading(false);
       }
@@ -68,12 +161,12 @@ const Packages = () => {
           <h2 className="heading-lg text-marathon-darkBlue mb-4">Choose Your Package</h2>
           <div className="w-24 h-1 bg-marathon-blue mx-auto mb-6"></div>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Select from our range of marathon packages designed to enhance your
+            Select from our range of Color Splash Run packages designed to enhance your
             running experience with different levels of perks and benefits.
           </p>
         </div>
 
-        {/* Distance Selection */}
+        {/* Distance Selection - Hidden for Color Splash Run
         <div className="flex flex-wrap justify-center gap-2 mb-12">
           {distances.map((distance) => (
             <button
@@ -89,6 +182,7 @@ const Packages = () => {
             </button>
           ))}
         </div>
+        */}
 
         {loading ? (
           <div className="flex justify-center py-12">
@@ -103,7 +197,7 @@ const Packages = () => {
         ) : (
           /* Packages Display */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {packages.map((pkg) => (
+            {(packages.length > 0 ? packages : colorSplashPackages).map((pkg) => (
               <div
                 key={pkg.id}
                 className={`bg-white rounded-lg shadow-md overflow-hidden ${
@@ -118,10 +212,21 @@ const Packages = () => {
                 
                 <div className="p-6">
                   <h3 className="text-2xl font-bold text-marathon-darkBlue mb-2">{pkg.name}</h3>
-                  <div className="flex items-baseline mb-6">
-                    <span className="text-4xl font-bold text-marathon-blue">${Number(pkg.price) + getCurrentDistanceAdditionalPrice()}</span>
-                    <span className="text-gray-500 ml-1">/person</span>
+                  <div className="flex items-baseline mb-2">
+                    <span className="text-4xl font-bold text-marathon-blue">
+                      K{Number(pkg.price)}
+                    </span>
+                    {pkg.forPeople > 1 && (
+                      <span className="text-gray-500 ml-1">/{pkg.forPeople} people</span>
+                    )}
+                    {pkg.forPeople === 1 && (
+                      <span className="text-gray-500 ml-1">/person</span>
+                    )}
                   </div>
+                  
+                  {pkg.note && (
+                    <p className="text-sm text-gray-600 italic mb-4">{pkg.note}</p>
+                  )}
                   
                   <ul className="mb-6 space-y-3">
                     {pkg.features.map((feature, index) => (
@@ -134,7 +239,7 @@ const Packages = () => {
                     ))}
                   </ul>
                   
-                  <Link to={`/register?package=${pkg.id}&distance=${selectedDistance}`}>
+                  <Link to={`/register?package=${pkg.id}`}>
                     <Button className={`w-full ${pkg.recommended ? "button-accent" : "button-primary"}`}>
                       Select Package
                     </Button>
@@ -145,8 +250,47 @@ const Packages = () => {
           </div>
         )}
         
+        <div className="mt-12 py-6 px-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+          <h3 className="text-lg font-bold text-marathon-darkBlue mb-4">Terms & Conditions</h3>
+          <ul className="text-gray-600 space-y-2 mb-6">
+            <li className="flex items-start">
+              <span className="text-marathon-blue mr-2">•</span>
+              All prices are non-refundable.
+            </li>
+            <li className="flex items-start">
+              <span className="text-marathon-blue mr-2">•</span>
+              T-shirt sizes subject to availability (please indicate the shirt size when registering).
+            </li>
+            <li className="flex items-start">
+              <span className="text-marathon-blue mr-2">•</span>
+              Early bird registrations close on 23rd May 2025.
+            </li>
+            <li className="flex items-start">
+              <span className="text-marathon-blue mr-2">•</span>
+              Group discounts require advance payment.
+            </li>
+          </ul>
+          
+          <h3 className="text-lg font-bold text-marathon-darkBlue mb-2">How to Register</h3>
+          <p className="italic text-gray-500 mb-4">Opening soon</p>
+          <ul className="text-gray-600 space-y-2">
+            <li className="flex items-start">
+              <span className="text-marathon-blue mr-2">•</span>
+              Online: Visit <a href="https://www.malaikashevents.com/register" className="text-marathon-blue hover:underline">www.malaikashevents.com/register</a>
+            </li>
+            <li className="flex items-start">
+              <span className="text-marathon-blue mr-2">•</span>
+              In-Person: Visit our registration agents at Mukuba Mall, Nkana Mall and ECL Mall, or at any offices of our sponsors.
+            </li>
+            <li className="flex items-start">
+              <span className="text-marathon-blue mr-2">•</span>
+              Contact: Email <a href="mailto:malaikashevents@gmail.com" className="text-marathon-blue hover:underline">malaikashevents@gmail.com</a> or call +26 0968 608888
+            </li>
+          </ul>
+        </div>
+        
         <div className="mt-8 text-center text-gray-500">
-          <p>All packages include a contribution to our charitable community initiatives.</p>
+          <p>Join us for a vibrant day of fun, fitness, and color! 🏃‍♀️🏃‍♂️🎨</p>
         </div>
       </div>
     </section>

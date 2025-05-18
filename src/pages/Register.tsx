@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, sendEmail } from "@/integrations/supabase/client";
 import { v4 as uuidv4 } from 'uuid';
 
 const Register = () => {
@@ -156,6 +156,19 @@ const Register = () => {
       
       // Store the registration ID for the confirmation page
       setRegistrationId(regData.id);
+      
+      // Send welcome email to the user
+      try {
+        const selectedPackage = packages.find(p => p.id.toString() === formData.packageId.toString());
+        await sendEmail.welcome(formData.fullName, formData.email, {
+          package: selectedPackage?.name || 'Standard Package',
+          distance: selectedDistance?.name || 'Standard Distance',
+          tshirtSize: formData.tshirtSize
+        });
+      } catch (emailError) {
+        console.error('Welcome email could not be sent:', emailError);
+        // Don't fail the registration if email fails
+      }
       
       // Move to the confirmation step
       setStep(4);

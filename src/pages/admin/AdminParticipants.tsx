@@ -25,7 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Check, X } from "lucide-react";
-import { supabase, callEdgeFunction } from "@/integrations/supabase/client";
+import { supabase, sendEmail } from "@/integrations/supabase/client";
 import { Registration, User } from "@/types/database"; // Import types from database.ts
 
 // Define interface for Supabase joined query results
@@ -159,13 +159,8 @@ const AdminParticipants = () => {
         
       if (error) throw error;
       
-      // Send verification email
-      await callEdgeFunction('send-verification-email', {
-        body: {
-          name: viewParticipant.name,
-          email: viewParticipant.email
-        }
-      });
+      // Send verification email using new email service
+      await sendEmail.verification(viewParticipant.name, viewParticipant.email);
       
       // Update local state
       setParticipants(current => 
