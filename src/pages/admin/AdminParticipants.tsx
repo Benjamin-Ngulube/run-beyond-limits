@@ -26,15 +26,32 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Check, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, callEdgeFunction } from "@/integrations/supabase/client";
+
+// Define interface for participant data
+interface Participant {
+  id: string;
+  name: string;
+  email: string;
+  package: string;
+  distance: string;
+  payment: string;
+  date: string;
+  tshirt: string;
+  paymentScreenshot: string | null;
+  phone: string | null;
+  country: string | null;
+  userId: string;
+  amount: number;
+}
 
 const AdminParticipants = () => {
   const [searchText, setSearchText] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [viewParticipant, setViewParticipant] = useState(null);
+  const [viewParticipant, setViewParticipant] = useState<Participant | null>(null);
   const [confirmVerifyOpen, setConfirmVerifyOpen] = useState(false);
   const [confirmRejectOpen, setConfirmRejectOpen] = useState(false);
-  const [participants, setParticipants] = useState([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   
@@ -61,7 +78,7 @@ const AdminParticipants = () => {
         
         if (data) {
           // Format data for our UI
-          const formattedData = data.map(registration => ({
+          const formattedData: Participant[] = data.map(registration => ({
             id: registration.id,
             name: registration.user?.full_name || 'Unknown',
             email: registration.user?.email || 'Unknown',
@@ -121,7 +138,12 @@ const AdminParticipants = () => {
       if (error) throw error;
       
       // Send verification email
-      await sendVerificationEmail(viewParticipant.email, viewParticipant.name);
+      await callEdgeFunction('send-verification-email', {
+        body: {
+          name: viewParticipant.name,
+          email: viewParticipant.email
+        }
+      });
       
       // Update local state
       setParticipants(current => 
@@ -146,27 +168,6 @@ const AdminParticipants = () => {
         description: "An error occurred while verifying the payment.",
         variant: "destructive"
       });
-    }
-  };
-
-  const sendVerificationEmail = async (email, name) => {
-    try {
-      const response = await fetch('/api/send-verification-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, name }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to send verification email');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error sending verification email:', error);
-      throw error;
     }
   };
 
