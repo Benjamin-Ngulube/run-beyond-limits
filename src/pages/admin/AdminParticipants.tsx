@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Table, 
@@ -27,8 +26,30 @@ import {
 } from "@/components/ui/dialog";
 import { Check, X } from "lucide-react";
 import { supabase, callEdgeFunction } from "@/integrations/supabase/client";
+import { Registration, User } from "@/types/database"; // Import types from database.ts
 
-// Define interface for participant data
+// Define interface for Supabase joined query results
+interface RegistrationWithRelations {
+  id: string;
+  created_at: string;
+  status: 'pending' | 'verified' | 'rejected';
+  amount: number;
+  distance: string;
+  payment_proof: string | null;
+  package: {
+    name: string;
+  } | null;
+  user: {
+    id: string;
+    full_name: string;
+    email: string;
+    phone: string | null;
+    country: string | null;
+    tshirt_size: string | null;
+  } | null;
+}
+
+// Define interface for participant data that we use in our component
 interface Participant {
   id: string;
   name: string;
@@ -77,8 +98,9 @@ const AdminParticipants = () => {
         if (error) throw error;
         
         if (data) {
-          // Format data for our UI
-          const formattedData: Participant[] = data.map(registration => ({
+          // Format data for our UI - explicitly type the data as RegistrationWithRelations[]
+          const typedData = data as unknown as RegistrationWithRelations[];
+          const formattedData: Participant[] = typedData.map(registration => ({
             id: registration.id,
             name: registration.user?.full_name || 'Unknown',
             email: registration.user?.email || 'Unknown',
@@ -88,9 +110,9 @@ const AdminParticipants = () => {
             date: new Date(registration.created_at).toISOString().split('T')[0],
             tshirt: registration.user?.tshirt_size || 'Unknown',
             paymentScreenshot: registration.payment_proof,
-            phone: registration.user?.phone || 'Unknown',
-            country: registration.user?.country || 'Unknown',
-            userId: registration.user?.id,
+            phone: registration.user?.phone || null,
+            country: registration.user?.country || null,
+            userId: registration.user?.id || '',
             amount: registration.amount
           }));
           
