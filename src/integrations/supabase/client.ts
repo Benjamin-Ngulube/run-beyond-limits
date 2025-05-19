@@ -38,12 +38,15 @@ export async function callEdgeFunction(functionName: string, options: {
 // Email helper functions
 export const sendEmail = {
   // Send verification email when admin verifies registration
-  verification: async (name: string, email: string) => {
+  verification: async (name: string, email: string, verificationCode: string) => {
     return callEdgeFunction('send-participant-email', {
       body: {
         name,
         email,
-        emailType: 'verification'
+        emailType: 'verification',
+        customData: {
+          verificationCode
+        }
       }
     });
   },

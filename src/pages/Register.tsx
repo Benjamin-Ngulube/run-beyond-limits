@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ const Register = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationId, setRegistrationId] = useState(null);
+  const [verificationCode, setVerificationCode] = useState(null);
 
   const distances = [
     { id: "5k", name: "5K Fun Run", additionalPrice: 0 },
@@ -91,10 +93,33 @@ const Register = () => {
     window.scrollTo(0, 0);
   };
 
+  // Generate a unique verification code
+  const generateVerificationCode = () => {
+    // Create a unique code that's easy to read (alphanumeric, no special chars)
+    // Format: CSR-XXXX-XXXX where X is alphanumeric
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Omitting confusing characters like 0, O, 1, I
+    let code = 'CSR-';
+    
+    // Generate first group of 4 characters
+    for (let i = 0; i < 4; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    code += '-';
+    
+    // Generate second group of 4 characters
+    for (let i = 0; i < 4; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    return code;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     const generatedId = uuidv4();
+    const verificationCode = generateVerificationCode();
     
     try {
       // First create the user record
@@ -137,7 +162,7 @@ const Register = () => {
       const selectedDistance = distances.find(d => d.id === formData.distance);
       const totalAmount = selectedPackage ? selectedPackage.price + (selectedDistance?.additionalPrice || 0) : 0;
 
-      // Then create the registration record
+      // Then create the registration record with the verification code
       const { data: regData, error: regError } = await supabase
         .from('registrations')
         .insert({
@@ -147,15 +172,17 @@ const Register = () => {
           status: 'pending',
           payment_proof: paymentProofUrl,
           amount: totalAmount,
-          email: formData.email
+          email: formData.email,
+          verification_code: verificationCode
         })
         .select()
         .single();
 
       if (regError) throw regError;
       
-      // Store the registration ID for the confirmation page
+      // Store the registration ID and verification code for the confirmation page
       setRegistrationId(regData.id);
+      setVerificationCode(verificationCode);
       
       // Send welcome email to the user
       try {
@@ -163,7 +190,8 @@ const Register = () => {
         await sendEmail.welcome(formData.fullName, formData.email, {
           package: selectedPackage?.name || 'Standard Package',
           distance: selectedDistance?.name || 'Standard Distance',
-          tshirtSize: formData.tshirtSize
+          tshirtSize: formData.tshirtSize,
+          verificationCode: verificationCode
         });
       } catch (emailError) {
         console.error('Welcome email could not be sent:', emailError);
@@ -198,7 +226,7 @@ const Register = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
             <div className="bg-marathon-blue p-6 text-white">
-              <h1 className="text-2xl md:text-3xl font-bold">Register for Marathon2025</h1>
+              <h1 className="text-2xl md:text-3xl font-bold">Register for Color Splash Run</h1>
               <p className="mt-2">Complete your registration to secure your spot in the event</p>
 
               {/* Progress Indicator */}
@@ -623,18 +651,26 @@ const Register = () => {
                   </div>
                   <h2 className="text-2xl font-bold text-marathon-darkBlue mb-4">Registration Successful!</h2>
                   <p className="text-gray-600 mb-6">
-                    Thank you for registering for Marathon2025. Your registration has been received
+                    Thank you for registering for the Color Splash Run. Your registration has been received
                     and is pending approval.
                   </p>
                   
                   <div className="bg-gray-50 rounded-lg p-6 mb-6 inline-block">
                     <p className="text-gray-600 mb-2">Your Registration ID:</p>
-                    <p className="text-3xl font-bold text-marathon-blue">{registrationId?.substring(0, 8) || "Registration Complete"}</p>
+                    <p className="text-xl font-bold text-marathon-blue">{registrationId?.substring(0, 8) || "Registration Complete"}</p>
+                    
+                    {verificationCode && (
+                      <>
+                        <p className="text-gray-600 mt-4 mb-2">Your Verification Code:</p>
+                        <p className="text-3xl font-bold text-marathon-blue tracking-wider">{verificationCode}</p>
+                        <p className="text-sm text-gray-500 mt-2">Keep this code safe. You'll need it on event day.</p>
+                      </>
+                    )}
                   </div>
                   
                   <p className="text-gray-600 mb-8">
                     We have sent a confirmation email to {formData.email} with all the details.
-                    Please keep your Registration ID for future reference.
+                    Please keep your verification code for future reference.
                   </p>
                   
                   <div className="space-y-4">

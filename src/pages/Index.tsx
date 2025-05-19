@@ -10,7 +10,6 @@ import ContactSection from "../components/home/ContactSection";
 import LocationMap from "../components/home/LocationMap";
 import Footer from "../components/layout/Footer";
 import Sponsors from "../components/home/Sponsors";
-import TestEmail from "../components/TestEmail";
 
 const Index = () => {
   return (
@@ -18,12 +17,6 @@ const Index = () => {
       <Navbar />
       <main className="flex-grow">
         <Hero />
-        <div className="container mx-auto px-4 py-8 bg-gray-50">
-          <h2 className="text-2xl font-bold text-center mb-6">Email Testing System</h2>
-          <div className="max-w-3xl mx-auto">
-            <TestEmail />
-          </div>
-        </div>
         <About />
         <HomeHighlights />
         <Packages />

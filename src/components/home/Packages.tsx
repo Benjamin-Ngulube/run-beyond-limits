@@ -6,16 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 const Packages = () => {
-  const [selectedDistance, setSelectedDistance] = useState("5k");
-  const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const distances = [
-    { id: "5k", name: "5K Fun Run", additionalPrice: 0 },
-    { id: "10k", name: "10K Race", additionalPrice: 10 },
-    { id: "half", name: "Half Marathon", additionalPrice: 25 },
-    { id: "full", name: "Full Marathon", additionalPrice: 40 }
-  ];
 
   // Static packages data for Color Splash Run
   const colorSplashPackages = [
@@ -110,11 +101,34 @@ const Packages = () => {
     }
   ];
 
-  // Fetch packages from Supabase
+  // Fetch packages from Supabase or use static packages
   useEffect(() => {
-    async function fetchPackages() {
+    async function updatePackages() {
       try {
         setLoading(true);
+        
+        // First check if packages already exist
+        const { data: existingPackages } = await supabase
+          .from('packages')
+          .select('*');
+          
+        // If packages don't exist or there aren't enough, update them
+        if (!existingPackages || existingPackages.length < colorSplashPackages.length) {
+          // Delete existing packages first
+          await supabase.from('packages').delete().gte('id', 0);
+          
+          // Insert new packages
+          for (const pkg of colorSplashPackages) {
+            await supabase.from('packages').insert({
+              id: pkg.id,
+              name: pkg.name,
+              price: pkg.price,
+              features: JSON.stringify(pkg.features)
+            });
+          }
+        }
+        
+        // Fetch updated packages
         const { data, error } = await supabase
           .from('packages')
           .select('*')
@@ -122,37 +136,20 @@ const Packages = () => {
           
         if (error) throw error;
         
-        if (data) {
-          // Format packages with recommended flag
-          const formattedPackages = data.map((pkg, index) => ({
-            ...pkg,
-            features: Array.isArray(pkg.features) ? pkg.features : JSON.parse(pkg.features || '[]'),
-            recommended: index === 1 // Middle package is recommended
-          }));
-          
-          setPackages(formattedPackages);
-        }
       } catch (error) {
-        console.error('Error fetching packages:', error);
+        console.error('Error handling packages:', error);
         toast({
-          title: "Failed to load packages",
-          description: "Please try refreshing the page",
+          title: "Error with packages",
+          description: "Using default packages instead",
           variant: "destructive"
         });
-        // Fallback to static packages if database fails
-        setPackages(colorSplashPackages);
       } finally {
         setLoading(false);
       }
     }
     
-    fetchPackages();
+    updatePackages();
   }, []);
-
-  function getCurrentDistanceAdditionalPrice() {
-    const distance = distances.find(d => d.id === selectedDistance);
-    return distance ? distance.additionalPrice : 0;
-  }
 
   return (
     <section id="packages" className="section-padding bg-gray-50">
@@ -165,24 +162,6 @@ const Packages = () => {
             running experience with different levels of perks and benefits.
           </p>
         </div>
-
-        {/* Distance Selection - Hidden for Color Splash Run
-        <div className="flex flex-wrap justify-center gap-2 mb-12">
-          {distances.map((distance) => (
-            <button
-              key={distance.id}
-              onClick={() => setSelectedDistance(distance.id)}
-              className={`px-6 py-2 rounded-full ${
-                selectedDistance === distance.id
-                  ? "bg-marathon-blue text-white"
-                  : "bg-white text-marathon-darkBlue border border-gray-200 hover:bg-gray-100"
-              } transition-colors`}
-            >
-              {distance.name}
-            </button>
-          ))}
-        </div>
-        */}
 
         {loading ? (
           <div className="flex justify-center py-12">
@@ -197,7 +176,7 @@ const Packages = () => {
         ) : (
           /* Packages Display */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {(packages.length > 0 ? packages : colorSplashPackages).map((pkg) => (
+            {colorSplashPackages.map((pkg) => (
               <div
                 key={pkg.id}
                 className={`bg-white rounded-lg shadow-md overflow-hidden ${
