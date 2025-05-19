@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -122,27 +121,42 @@ const Register = () => {
     const verificationCode = generateVerificationCode();
     
     try {
-      // First create the user record
-      const { data: userData, error: userError } = await supabase
+      // Check if user with email already exists
+      const { data: existingUser } = await supabase
         .from('users')
-        .insert({
-          full_name: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          country: formData.country,
-          tshirt_size: formData.tshirtSize
-        })
-        .select()
+        .select('id')
+        .eq('email', formData.email)
         .single();
 
-      if (userError) throw userError;
+      let userId;
+      
+      if (existingUser) {
+        // If user exists, use their existing ID
+        userId = existingUser.id;
+      } else {
+        // Create new user if they don't exist
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .insert({
+            full_name: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            country: formData.country,
+            tshirt_size: formData.tshirtSize
+          })
+          .select()
+          .single();
+
+        if (userError) throw userError;
+        userId = userData.id;
+      }
 
       // Upload payment proof if it exists
       let paymentProofUrl = '';
       
       if (formData.paymentProof) {
         const fileExt = formData.paymentProof.name.split('.').pop();
-        const fileName = `${userData.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const fileName = `${userId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         
         const { data: fileData, error: uploadError } = await supabase.storage
           .from('payment_proofs')
@@ -166,7 +180,7 @@ const Register = () => {
       const { data: regData, error: regError } = await supabase
         .from('registrations')
         .insert({
-          user_id: userData.id,
+          user_id: userId,
           package_id: parseInt(formData.packageId),
           distance: formData.distance,
           status: 'pending',
@@ -193,6 +207,7 @@ const Register = () => {
           tshirtSize: formData.tshirtSize,
           verificationCode: verificationCode
         });
+        console.log("Welcome email sent successfully");
       } catch (emailError) {
         console.error('Welcome email could not be sent:', emailError);
         // Don't fail the registration if email fails
@@ -208,7 +223,7 @@ const Register = () => {
     } catch (error) {
       console.error('Registration error:', error);
       toast.error("Registration failed", {
-        description: "Please try again or contact support if the problem persists.",
+        description: error.message || "Please try again or contact support if the problem persists.",
       });
     } finally {
       setIsSubmitting(false);
@@ -495,7 +510,7 @@ const Register = () => {
                         </div>
                       </div>
                       <div className="text-2xl font-bold text-marathon-blue">
-                        ${totalPrice}
+                        ZMW {totalPrice}
                       </div>
                     </div>
                   </div>
@@ -531,8 +546,8 @@ const Register = () => {
                         </svg>
                       </div>
                       <div className="ml-3">
-                        <p className="text-sm text-yellow-700">
-                          For this demo, you'll upload a screenshot of payment instead of using a real payment gateway.
+                        <p className="text-sm text-yellow-800">
+                          <strong>Note:</strong> For this demo, you'll upload a screenshot of payment instead of using a real payment gateway.
                         </p>
                       </div>
                     </div>
@@ -557,7 +572,7 @@ const Register = () => {
                       <div className="border-t border-gray-200 my-2"></div>
                       <div className="flex justify-between font-bold">
                         <span>Total:</span>
-                        <span>${totalPrice}</span>
+                        <span>ZMW {totalPrice}</span>
                       </div>
                     </div>
                   </div>

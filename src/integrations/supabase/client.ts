@@ -14,6 +14,8 @@ export async function callEdgeFunction(functionName: string, options: {
   try {
     const { method = 'POST', body } = options;
     
+    console.log(`Calling edge function: ${functionName}`, body);
+    
     const response = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
       method,
       headers: {
@@ -24,11 +26,20 @@ export async function callEdgeFunction(functionName: string, options: {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorText = await response.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch (e) {
+        errorData = { error: errorText };
+      }
+      console.error(`Edge function error response:`, errorData);
       throw new Error(`Edge function error: ${response.status} - ${errorData.error || 'Unknown error'}`);
     }
 
-    return await response.json();
+    const responseData = await response.json();
+    console.log(`Edge function response:`, responseData);
+    return responseData;
   } catch (error) {
     console.error(`Error calling ${functionName}:`, error);
     throw error;
@@ -39,6 +50,7 @@ export async function callEdgeFunction(functionName: string, options: {
 export const sendEmail = {
   // Send verification email when admin verifies registration
   verification: async (name: string, email: string, verificationCode: string = "TEMP-" + Math.floor(100000 + Math.random() * 900000)) => {
+    console.log(`Sending verification email to ${email} with code ${verificationCode}`);
     return callEdgeFunction('send-participant-email', {
       body: {
         name,
@@ -53,6 +65,7 @@ export const sendEmail = {
   
   // Send welcome email when user registers
   welcome: async (name: string, email: string, customData: Record<string, string | number | boolean> = {}) => {
+    console.log(`Sending welcome email to ${email}`, customData);
     return callEdgeFunction('send-participant-email', {
       body: {
         name,
@@ -65,6 +78,7 @@ export const sendEmail = {
   
   // Send reminder email before event
   reminder: async (name: string, email: string, customData: Record<string, string | number | boolean> = {}) => {
+    console.log(`Sending reminder email to ${email}`, customData);
     return callEdgeFunction('send-participant-email', {
       body: {
         name,
@@ -77,6 +91,7 @@ export const sendEmail = {
   
   // Send test email
   test: async (name: string, email: string) => {
+    console.log(`Sending test email to ${email}`);
     return callEdgeFunction('send-participant-email', {
       body: {
         name,

@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 const Packages = () => {
   const [loading, setLoading] = useState(true);
 
-  // Static packages data for Color Splash Run
+  // Updated packages data for Color Splash Run
   const colorSplashPackages = [
     {
       id: 1,
@@ -193,7 +193,7 @@ const Packages = () => {
                   <h3 className="text-2xl font-bold text-marathon-darkBlue mb-2">{pkg.name}</h3>
                   <div className="flex items-baseline mb-2">
                     <span className="text-4xl font-bold text-marathon-blue">
-                      K{Number(pkg.price)}
+                      ZMW {Number(pkg.price)}
                     </span>
                     {pkg.forPeople > 1 && (
                       <span className="text-gray-500 ml-1">/{pkg.forPeople} people</span>
