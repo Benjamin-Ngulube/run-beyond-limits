@@ -70,5 +70,16 @@ export const sendEmail = {
         customData
       }
     });
+  },
+  
+  // Send test email
+  test: async (name: string, email: string) => {
+    return callEdgeFunction('send-participant-email', {
+      body: {
+        name,
+        email,
+        emailType: 'test'
+      }
+    });
   }
 };

@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("re_NjNTbr5D_4Vpu4f84aYQKbXy5gRmU9fCs"));
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,24 +26,27 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { name, email, emailType, customData = {} }: EmailRequest = await req.json();
 
+    console.log(`Attempting to send ${emailType} email to ${email}`);
+
     // Email templates based on type
     const templates = {
       verification: {
-        subject: "Your Marathon Registration is Confirmed!",
+        subject: "Your Color Splash Run Registration is Confirmed!",
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h1 style="color: #3b82f6; margin-top: 40px;">Registration Confirmed!</h1>
+            <h1 style="color: #ec4899; margin-top: 40px;">Registration Confirmed!</h1>
             <p>Dear ${name},</p>
-            <p>Congratulations! Your registration for the marathon has been verified and confirmed.</p>
+            <p>Congratulations! Your registration for the Color Splash Run has been verified and confirmed.</p>
             <p>We're excited to have you join us for this amazing event. Here's what you need to know:</p>
             <ul>
               <li>Your registration is now complete</li>
               <li>You'll receive your race packet at the event</li>
               <li>Please arrive 1 hour before your race start time</li>
             </ul>
-            <p>If you have any questions, please don't hesitate to contact our support team.</p>
+            <p>If you have any questions, please don't hesitate to contact our support team at malaikashevents@gmail.com.</p>
             <p>See you at the starting line!</p>
-            <p style="margin-top: 40px;">Best regards,<br>The Marathon Team</p>
+            <p style="margin-top: 40px;">Best regards,<br>The Color Splash Run Team</p>
+            <p style="font-size: 12px; color: #666; margin-top: 30px;">Contact us at: malaikashevents@gmail.com | +26 0968 608888</p>
           </div>
         `,
       },
@@ -83,6 +86,20 @@ const handler = async (req: Request): Promise<Response> => {
             </ul>
             <p>We're looking forward to seeing you there for a day full of color and fun!</p>
             <p style="margin-top: 40px;">Best regards,<br>The Color Splash Run Team</p>
+            <p style="font-size: 12px; color: #666; margin-top: 30px;">Contact us at: malaikashevents@gmail.com | +26 0968 608888</p>
+          </div>
+        `,
+      },
+      test: {
+        subject: "Test Email from Color Splash Run Registration System",
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h1 style="color: #ec4899; margin-top: 40px;">Test Email</h1>
+            <p>Dear ${name},</p>
+            <p>This is a test email from the Color Splash Run registration system.</p>
+            <p>If you're receiving this email, it means the email sending functionality is working correctly!</p>
+            <p style="margin-top: 40px;">Best regards,<br>The Color Splash Run Team</p>
+            <p style="font-size: 12px; color: #666; margin-top: 30px;">Contact us at: malaikashevents@gmail.com | +26 0968 608888</p>
           </div>
         `,
       }

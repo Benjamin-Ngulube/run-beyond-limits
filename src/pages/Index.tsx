@@ -1,15 +1,16 @@
 
 import Navbar from "../components/layout/Navbar";
-import Footer from "../components/layout/Footer";
 import Hero from "../components/home/Hero";
 import About from "../components/home/About";
+import HomeHighlights from "../components/home/HomeHighlights";
 import Packages from "../components/home/Packages";
 import Gallery from "../components/home/Gallery";
-import Sponsors from "../components/home/Sponsors";
 import TeamSection from "../components/home/TeamSection";
-import LocationMap from "../components/home/LocationMap";
 import ContactSection from "../components/home/ContactSection";
-import HomeHighlights from "../components/home/HomeHighlights"; 
+import LocationMap from "../components/home/LocationMap";
+import Footer from "../components/layout/Footer";
+import Sponsors from "../components/home/Sponsors";
+import TestEmail from "../components/TestEmail";
 
 const Index = () => {
   return (
@@ -17,14 +18,17 @@ const Index = () => {
       <Navbar />
       <main className="flex-grow">
         <Hero />
-        <HomeHighlights />
+        <div className="container mx-auto px-4 py-8">
+          <TestEmail />
+        </div>
         <About />
+        <HomeHighlights />
         <Packages />
         <Gallery />
         <TeamSection />
         <Sponsors />
-        <LocationMap />
         <ContactSection />
+        <LocationMap />
       </main>
       <Footer />
     </div>
