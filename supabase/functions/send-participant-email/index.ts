@@ -2,7 +2,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Get the API key from environment variables
+const resendApiKey = Deno.env.get("RESEND_API_KEY");
+
+// Create Resend client with proper error handling
+const resend = resendApiKey 
+  ? new Resend(resendApiKey)
+  : null;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,9 +30,21 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Check if API key is available
+    if (!resendApiKey || !resend) {
+      console.error("Missing Resend API key in environment variables");
+      return new Response(
+        JSON.stringify({ error: "Email service configuration error" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
     const { name, email, emailType, customData = {} }: EmailRequest = await req.json();
 
-    console.log(`Attempting to send ${emailType} email to ${email}`);
+    console.log(`Attempting to send ${emailType} email to ${email} with API key length: ${resendApiKey?.length || 0}`);
 
     // Email templates based on type
     const templates = {
@@ -107,6 +125,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Select the appropriate template
     const template = templates[emailType as keyof typeof templates] || templates.welcome;
+
+    console.log("Sending email with template:", emailType);
 
     const emailResponse = await resend.emails.send({
       from: "Color Splash Run <onboarding@resend.dev>",

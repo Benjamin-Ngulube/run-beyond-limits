@@ -10,6 +10,7 @@ const TestEmail = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
   const sendTestWelcomeEmail = async () => {
     if (!name || !email) {
@@ -18,15 +19,19 @@ const TestEmail = () => {
     }
 
     setLoading(true);
+    setErrorDetails(null);
     try {
-      await sendEmail.welcome(name, email, {
+      const response = await sendEmail.welcome(name, email, {
         package: 'Family Package',
         distance: '5K Fun Run',
         tshirtSize: 'M'
       });
+      console.log("Email API response:", response);
       toast.success("Welcome email sent successfully!");
     } catch (error) {
       console.error("Error sending welcome email:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setErrorDetails(errorMessage);
       toast.error("Failed to send welcome email");
     } finally {
       setLoading(false);
@@ -40,11 +45,15 @@ const TestEmail = () => {
     }
 
     setLoading(true);
+    setErrorDetails(null);
     try {
-      await sendEmail.verification(name, email);
+      const response = await sendEmail.verification(name, email);
+      console.log("Email API response:", response);
       toast.success("Verification email sent successfully!");
     } catch (error) {
       console.error("Error sending verification email:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setErrorDetails(errorMessage);
       toast.error("Failed to send verification email");
     } finally {
       setLoading(false);
@@ -58,11 +67,15 @@ const TestEmail = () => {
     }
 
     setLoading(true);
+    setErrorDetails(null);
     try {
-      await sendEmail.test(name, email);
+      const response = await sendEmail.test(name, email);
+      console.log("Email API response:", response);
       toast.success("Test email sent successfully!");
     } catch (error) {
       console.error("Error sending test email:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      setErrorDetails(errorMessage);
       toast.error("Failed to send test email");
     } finally {
       setLoading(false);
@@ -96,7 +109,7 @@ const TestEmail = () => {
         </div>
       </div>
       
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <Button 
           onClick={sendTestEmail}
           disabled={loading}
@@ -119,6 +132,13 @@ const TestEmail = () => {
           {loading ? "Sending..." : "Test Verification Email"}
         </Button>
       </div>
+      
+      {errorDetails && (
+        <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded text-red-700">
+          <p className="font-semibold">Error Details:</p>
+          <pre className="text-xs mt-1 overflow-x-auto">{errorDetails}</pre>
+        </div>
+      )}
     </div>
   );
 };
