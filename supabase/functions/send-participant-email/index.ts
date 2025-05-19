@@ -3,12 +3,10 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
 // Get the API key from environment variables
-const resendApiKey = Deno.env.get("RESEND_API_KEY");
+const resendApiKey = Deno.env.get("RESEND_API_KEY") || "re_A4FZqSoF_KLsoK1NwWUXXCMB2Eu6cP3L6";
 
 // Create Resend client with proper error handling
-const resend = resendApiKey 
-  ? new Resend(resendApiKey)
-  : null;
+const resend = new Resend(resendApiKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,11 +28,13 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Check if API key is available
-    if (!resendApiKey || !resend) {
-      console.error("Missing Resend API key in environment variables");
+    // Log API key availability (without revealing the full key)
+    console.log(`API Key available: ${resendApiKey ? 'Yes (length: ' + resendApiKey.length + ')' : 'No'}`);
+    
+    if (!resendApiKey) {
+      console.error("Missing Resend API key");
       return new Response(
-        JSON.stringify({ error: "Email service configuration error" }),
+        JSON.stringify({ error: "Email service configuration error - Missing API key" }),
         {
           status: 500,
           headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -44,7 +44,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { name, email, emailType, customData = {} }: EmailRequest = await req.json();
 
-    console.log(`Attempting to send ${emailType} email to ${email} with API key length: ${resendApiKey?.length || 0}`);
+    console.log(`Attempting to send ${emailType} email to ${email}`);
 
     // Email templates based on type
     const templates = {
@@ -128,22 +128,33 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Sending email with template:", emailType);
 
-    const emailResponse = await resend.emails.send({
-      from: "Color Splash Run <onboarding@resend.dev>",
-      to: [email],
-      subject: template.subject,
-      html: template.html,
-    });
+    try {
+      const emailResponse = await resend.emails.send({
+        from: "Color Splash Run <onboarding@resend.dev>",
+        to: [email],
+        subject: template.subject,
+        html: template.html,
+      });
 
-    console.log(`${emailType} email sent successfully to ${email}:`, emailResponse);
+      console.log(`${emailType} email sent successfully to ${email}:`, emailResponse);
 
-    return new Response(JSON.stringify(emailResponse), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
+      return new Response(JSON.stringify(emailResponse), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders,
+        },
+      });
+    } catch (emailError: any) {
+      console.error(`Error sending email with Resend:`, emailError);
+      return new Response(
+        JSON.stringify({ error: `Email sending failed: ${emailError.message}`, details: emailError }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
   } catch (error: any) {
     console.error(`Error in send-participant-email function:`, error);
     return new Response(

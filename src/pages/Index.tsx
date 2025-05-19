@@ -18,9 +18,11 @@ const Index = () => {
       <Navbar />
       <main className="flex-grow">
         <Hero />
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-4 py-8 bg-gray-50">
           <h2 className="text-2xl font-bold text-center mb-6">Email Testing System</h2>
-          <TestEmail />
+          <div className="max-w-3xl mx-auto">
+            <TestEmail />
+          </div>
         </div>
         <About />
         <HomeHighlights />

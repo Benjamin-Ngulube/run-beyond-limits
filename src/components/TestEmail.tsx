@@ -11,6 +11,7 @@ const TestEmail = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  const [responseDetails, setResponseDetails] = useState<string | null>(null);
 
   const sendTestWelcomeEmail = async () => {
     if (!name || !email) {
@@ -20,6 +21,7 @@ const TestEmail = () => {
 
     setLoading(true);
     setErrorDetails(null);
+    setResponseDetails(null);
     try {
       const response = await sendEmail.welcome(name, email, {
         package: 'Family Package',
@@ -27,7 +29,8 @@ const TestEmail = () => {
         tshirtSize: 'M'
       });
       console.log("Email API response:", response);
-      toast.success("Welcome email sent successfully!");
+      setResponseDetails(JSON.stringify(response, null, 2));
+      toast.success("Welcome email request processed. Check console for details.");
     } catch (error) {
       console.error("Error sending welcome email:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -46,10 +49,12 @@ const TestEmail = () => {
 
     setLoading(true);
     setErrorDetails(null);
+    setResponseDetails(null);
     try {
       const response = await sendEmail.verification(name, email);
       console.log("Email API response:", response);
-      toast.success("Verification email sent successfully!");
+      setResponseDetails(JSON.stringify(response, null, 2));
+      toast.success("Verification email request processed. Check console for details.");
     } catch (error) {
       console.error("Error sending verification email:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -68,10 +73,12 @@ const TestEmail = () => {
 
     setLoading(true);
     setErrorDetails(null);
+    setResponseDetails(null);
     try {
       const response = await sendEmail.test(name, email);
       console.log("Email API response:", response);
-      toast.success("Test email sent successfully!");
+      setResponseDetails(JSON.stringify(response, null, 2));
+      toast.success("Test email request processed. Check console for details.");
     } catch (error) {
       console.error("Error sending test email:", error);
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -86,6 +93,12 @@ const TestEmail = () => {
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
       <h2 className="text-xl font-bold mb-4">Test Email System</h2>
       <p className="text-gray-600 mb-4">Use this form to test the email functionality.</p>
+      <div className="p-3 mb-4 bg-yellow-50 border border-yellow-200 rounded">
+        <p className="text-sm text-yellow-800">
+          <strong>Note:</strong> Make sure your Resend API key is properly set in Supabase's secrets.
+          Current implementation is using: {resendApiKey ? "Custom API key from environment" : "Hardcoded API key"}
+        </p>
+      </div>
       
       <div className="space-y-4 mb-6">
         <div>
@@ -133,10 +146,17 @@ const TestEmail = () => {
         </Button>
       </div>
       
+      {responseDetails && (
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded">
+          <p className="font-semibold text-blue-700">Response Details:</p>
+          <pre className="text-xs mt-1 overflow-x-auto whitespace-pre-wrap">{responseDetails}</pre>
+        </div>
+      )}
+      
       {errorDetails && (
         <div className="mt-4 p-3 bg-red-50 border border-red-100 rounded text-red-700">
           <p className="font-semibold">Error Details:</p>
-          <pre className="text-xs mt-1 overflow-x-auto">{errorDetails}</pre>
+          <pre className="text-xs mt-1 overflow-x-auto whitespace-pre-wrap">{errorDetails}</pre>
         </div>
       )}
     </div>
