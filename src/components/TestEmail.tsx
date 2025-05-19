@@ -51,7 +51,9 @@ const TestEmail = () => {
     setErrorDetails(null);
     setResponseDetails(null);
     try {
-      const response = await sendEmail.verification(name, email);
+      // Generate a random verification code
+      const verificationCode = "TEST-" + Math.floor(100000 + Math.random() * 900000);
+      const response = await sendEmail.verification(name, email, verificationCode);
       console.log("Email API response:", response);
       setResponseDetails(JSON.stringify(response, null, 2));
       toast.success("Verification email request processed. Check console for details.");

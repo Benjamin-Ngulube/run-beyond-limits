@@ -159,8 +159,11 @@ const AdminParticipants = () => {
         
       if (error) throw error;
       
+      // Generate a verification code for this participant
+      const verificationCode = "VRF-" + viewParticipant.id.substring(0, 6);
+      
       // Send verification email using new email service
-      await sendEmail.verification(viewParticipant.name, viewParticipant.email);
+      await sendEmail.verification(viewParticipant.name, viewParticipant.email, verificationCode);
       
       // Update local state
       setParticipants(current => 
