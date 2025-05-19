@@ -96,7 +96,7 @@ const TestEmail = () => {
       <div className="p-3 mb-4 bg-yellow-50 border border-yellow-200 rounded">
         <p className="text-sm text-yellow-800">
           <strong>Note:</strong> Make sure your Resend API key is properly set in Supabase's secrets.
-          Current implementation is using: {resendApiKey ? "Custom API key from environment" : "Hardcoded API key"}
+          Current implementation is using a Resend API key from the Edge Function.
         </p>
       </div>
       
